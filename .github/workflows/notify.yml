@@ -2,10 +2,10 @@ name: notify
 
 on:
   schedule:
-    - cron: "10 0 * * *"  # 北京 08:10：分档升级提醒（错开 08:00 日报，避免状态回写竞态）
-    - cron: "0 6 * * *"   # 北京 14:00：分档升级提醒
-    - cron: "0 12 * * *"  # 北京 20:00：分档升级提醒
-    - cron: "0 0 * * *"   # 北京 08:00：每日汇总
+    - cron: "10 0 * * *"  # SCHEDULE_ESC_1（北京 08:10）
+    - cron: "0 6 * * *"   # SCHEDULE_ESC_2（北京 14:00）
+    - cron: "0 12 * * *"  # SCHEDULE_ESC_3（北京 20:00）
+    - cron: "0 0 * * *"   # SCHEDULE_DIGEST（北京 08:00 日报）
   workflow_dispatch:
     inputs:
       mode:
@@ -70,7 +70,7 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event.schedule }}" = "0 0 * * *" ]; then
+          elif [ "${{ github.event.schedule }}" = "0 0 * * *" ]; then # DIGEST_CRON_MATCH
             echo "mode=digest" >> "$GITHUB_OUTPUT"
           else
             echo "mode=escalate" >> "$GITHUB_OUTPUT"

@@ -3,117 +3,222 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BB Deadline Notifier · 一键部署</title>
+<title>BB Deadline Notifier · 部署</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/libsodium-wrappers/0.7.15/browsers-sumo/sodium.js"></script>
 <style>
-  :root { --fg:#1f2328; --muted:#656d76; --line:#d0d7de; --bg:#f6f8fa; --accent:#1a7f37; --err:#cf222e; }
-  * { box-sizing:border-box; }
-  body { font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-         color:var(--fg); max-width:760px; margin:0 auto; padding:24px 20px 80px; line-height:1.65; }
-  h1 { font-size:1.6rem; } h2 { font-size:1.15rem; margin-top:2em; border-bottom:1px solid var(--line); padding-bottom:.35em; }
-  .card { background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin:14px 0; }
-  .muted { color:var(--muted); font-size:.92em; }
-  label { display:block; font-weight:600; margin:14px 0 4px; font-size:.95em; }
-  label .opt { font-weight:400; color:var(--muted); }
-  input[type=text], input[type=password] { width:100%; padding:9px 11px; border:1px solid var(--line);
-    border-radius:7px; font-size:15px; font-family:inherit; }
-  input:focus { outline:2px solid #0969da2e; border-color:#0969da; }
-  .fieldset-optional { border-left:3px solid var(--line); padding-left:16px; margin-top:18px; }
-  .fieldset-optional.open { border-left-color:var(--accent); }
-  button { background:#1f883d; color:#fff; border:none; border-radius:8px; padding:12px 26px;
-    font-size:16px; font-weight:600; cursor:pointer; margin-top:22px; }
-  button:disabled { background:#8c959f; cursor:not-allowed; }
-  #log { background:#0d1117; color:#c9d1d9; border-radius:10px; padding:14px 16px; margin-top:18px;
-    font:12.5px/1.7 ui-monospace,Consolas,monospace; white-space:pre-wrap; display:none; }
-  #log .ok { color:#3fb950; } #log .err { color:#f85149; } #log .dim { color:#8b949e; }
-  .steps li { margin:6px 0; }
-  .warn { color:#9a6700; background:#fff8c5; border:1px solid #d4a72c66; padding:10px 14px; border-radius:8px; font-size:.92em; }
-  .ok-box { background:#dafbe1; border:1px solid #4ac26b; border-radius:10px; padding:16px 18px; margin-top:18px; display:none; }
-  a { color:#0969da; }
-  .toggle { cursor:pointer; user-select:none; }
-  details summary { cursor:pointer; font-weight:600; margin-top:10px; }
+  :root {
+    --bg:#f5f5f7; --card:#ffffff; --text:#1d1d1f; --sub:#6e6e73; --hair:#e8e8ed;
+    --accent:#0071e3; --accent-h:#0077ed; --red:#fa233b; --ok:#34c759; --fill:#f5f5f7;
+  }
+  * { box-sizing:border-box; margin:0; }
+  html { -webkit-font-smoothing:antialiased; }
+  body {
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro SC","Segoe UI",
+      "PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    color:var(--text); background:var(--bg); line-height:1.6; font-size:16px;
+  }
+  .privacy-band {
+    background:var(--red); color:#fff; text-align:center; padding:14px 20px;
+    font-weight:700; font-size:16px; letter-spacing:.02em;
+  }
+  .privacy-band small { display:block; font-weight:400; font-size:12.5px; opacity:.92; margin-top:2px; }
+  .wrap { max-width:860px; margin:0 auto; padding:48px 22px 90px; }
+  h1 { font-size:40px; font-weight:700; letter-spacing:-.02em; line-height:1.15; }
+  h2 { font-size:24px; font-weight:700; letter-spacing:-.01em; margin:56px 0 6px; }
+  .lede { color:var(--sub); font-size:18px; margin-top:10px; max-width:640px; }
+  .card { background:var(--card); border:1px solid var(--hair); border-radius:18px;
+          padding:26px 28px; margin-top:20px; box-shadow:0 2px 12px rgba(0,0,0,.03); }
+  .muted { color:var(--sub); font-size:14px; }
+  /* 模式对比表 */
+  table.cmp { width:100%; border-collapse:collapse; margin-top:14px; font-size:14.5px; }
+  table.cmp th, table.cmp.cmp td { padding:11px 14px; text-align:left; border-bottom:1px solid var(--hair); vertical-align:top; }
+  table.cmp thead th { font-size:13px; text-transform:none; color:var(--sub); font-weight:600;
+    background:var(--fill); border-bottom:1px solid var(--hair); }
+  table.cmp tbody th { font-weight:600; width:120px; color:var(--sub); font-size:13.5px; }
+  table.cmp tr:last-child td, table.cmp tr:last-child th { border-bottom:none; }
+  .tag { display:inline-block; font-size:12px; font-weight:600; padding:2px 10px; border-radius:980px; }
+  .tag.yes { background:#e8f5ec; color:#1a7f37; } .tag.no { background:#f5f5f7; color:#86868b; }
+  /* 表单 */
+  label.f { display:block; font-weight:600; font-size:14px; margin:20px 0 6px; }
+  label.f:first-child { margin-top:0; }
+  label.f .opt { font-weight:400; color:var(--sub); }
+  input[type=text], input[type=password] {
+    width:100%; padding:12px 14px; border:1px solid var(--hair); border-radius:12px;
+    font-size:16px; font-family:inherit; background:var(--card); color:var(--text); transition:border .15s;
+  }
+  input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 4px rgba(0,113,227,.12); }
+  input[type=time] {
+    width:100%; padding:10px 12px; border:1px solid var(--hair); border-radius:12px;
+    font-size:17px; font-family:inherit; background:var(--card); color:var(--text); text-align:center;
+  }
+  input[type=time]:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 4px rgba(0,113,227,.12); }
+  .times-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:14px; }
+  .times-grid .t label { display:block; font-size:13px; font-weight:600; color:var(--sub); margin-bottom:6px; text-align:center; }
+  @media (max-width:620px){ .times-grid { grid-template-columns:repeat(2,1fr); } h1{font-size:32px;} }
+  /* iOS 开关 */
+  .switch-row { display:flex; align-items:center; gap:14px; margin-top:22px; cursor:pointer; user-select:none; }
+  .switch-row b { font-size:16px; }
+  .switch { position:relative; width:51px; height:31px; flex:none; }
+  .switch input { opacity:0; width:0; height:0; }
+  .switch span { position:absolute; inset:0; border-radius:980px; background:#e9e9eb; transition:.2s; }
+  .switch span::after { content:""; position:absolute; width:27px; height:27px; border-radius:50%;
+    background:#fff; top:2px; left:2px; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.2); }
+  .switch input:checked + span { background:var(--ok); }
+  .switch input:checked + span::after { transform:translateX(20px); }
+  #loginBox { display:none; margin-top:6px; }
+  #loginBox.on { display:block; }
+  /* 按钮 / 日志 / 结果 */
+  button.primary {
+    background:var(--accent); color:#fff; border:none; border-radius:980px; padding:15px 34px;
+    font-size:17px; font-weight:600; font-family:inherit; cursor:pointer; margin-top:30px;
+    transition:background .15s, transform .1s;
+  }
+  button.primary:hover { background:var(--accent-h); }
+  button.primary:active { transform:scale(.98); }
+  button.primary:disabled { background:#a8c7e8; cursor:not-allowed; }
+  #log { background:#1d1d1f; color:#d1d1d6; border-radius:14px; padding:16px 18px; margin-top:24px;
+    font:12.5px/1.75 ui-monospace,"SF Mono",Consolas,monospace; white-space:pre-wrap; display:none; }
+  #log .ok { color:var(--ok); } #log .err { color:#ff6961; } #log .dim { color:#8e8e93; }
+  #done { background:#e8f5ec; border:1px solid #b5dfc1; border-radius:18px; padding:24px 26px;
+    margin-top:24px; display:none; font-size:15.5px; }
+  #done a, a { color:var(--accent); }
+  .warn { color:#b25000; background:#fff4e5; border:1px solid #ffd9a0; border-radius:12px;
+    padding:12px 16px; margin-top:16px; font-size:14px; display:none; }
+  .steps li { margin:8px 0; }
+  code { font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:.9em;
+    background:var(--fill); padding:1px 6px; border-radius:6px; }
+  details { margin-top:18px; } details summary { cursor:pointer; font-weight:600; color:var(--accent); }
+  footer { margin-top:70px; color:var(--sub); font-size:13px; }
 </style>
 </head>
 <body>
-<h1>📚 BB Deadline Notifier · 一键部署</h1>
-<p class="muted">为南方科技大学 Blackboard 作业截止日期建立邮件提醒。本页面是<b>纯静态页</b>：
-你填入的信息只从你的浏览器直接发往 GitHub 官方 API，没有也不经过任何中间服务器，页面不保存任何内容。</p>
 
-<div class="card">
-<b>它将为你做什么：</b>在你的 GitHub 账号下创建一个<b>私有仓库</b>（由公开模板生成），写入提醒所需的
-Secrets，并触发首次运行。此后每天 08:00 一封未提交作业日报、08:10 / 14:00 / 20:00 三次
-48/24/12 小时分档提醒（已提交的也会提醒并标注「已提交·请复核」）。
+<div class="privacy-band">🔒 本网站不存储任何用户数据
+  <small>纯静态网页 · 你填写的信息只从你的浏览器加密直达 GitHub 官方 API · 关闭页面即消失</small>
 </div>
 
-<h2>第一步：准备材料（5 分钟）</h2>
+<div class="wrap">
+<h1>作业截止日期提醒。</h1>
+<p class="lede">为南方科技大学的 Blackboard 建立邮件提醒：每天一封未交作业日报，加上 48 / 24 / 12 小时分档催交。
+全部运行在你自己的 GitHub 账号里，你的电脑无需安装任何东西。</p>
+
+<!-- ============ 模式说明 ============ -->
+<h2>两种模式</h2>
+<p class="muted">默认<b>基础模式</b>；在下方开启<b>登录模式</b>并填写学校凭据即可升级。</p>
+<div class="card">
+<table class="cmp">
+  <thead><tr><th></th><th>基础模式（无需登录）</th><th>登录模式</th></tr></thead>
+  <tbody>
+    <tr><th>工作原理</th>
+        <td>直接订阅 Blackboard 的<b>公开日历链接（ICS）</b>——和你把日历订阅进手机是一回事，全程不接触学校账号。</td>
+        <td>GitHub 云端服务器用你的<b>学号 + 密码</b>登录学校系统，读取成绩册里每项作业的截止时间与提交状态。凭据只存放在你仓库的加密 Secrets 中，任何网页（包括本页）都接触不到它。</td></tr>
+    <tr><th>课程名</th>
+        <td><span class="tag no">不显示</span></td>
+        <td><span class="tag yes">显示</span>（如「SME105 电路分析基础」）</td></tr>
+    <tr><th>已提交的作业</th>
+        <td><span class="tag no">无法识别</span>，临近时一律提醒</td>
+        <td>日报自动隐藏；分档提醒标注「已提交·请复核」作为保险</td></tr>
+    <tr><th>出分提醒</th>
+        <td><span class="tag no">不支持</span></td>
+        <td><span class="tag yes">可选开启</span></td></tr>
+    <tr><th>邮件标识</th>
+        <td>标题带 <code>[降级]</code> 前缀</td>
+        <td>无前缀</td></tr>
+    <tr><th>凭据暴露面</th>
+        <td>零学校凭据（最小风险）</td>
+        <td>学校密码存在于你自己的私有仓库 Secrets</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============ 准备材料 ============ -->
+<h2>准备材料</h2>
 <div class="card">
 <ol class="steps">
-  <li><b>GitHub 账号</b>（没有就注册一个，免费）。</li>
-  <li><b>一个个人 QQ 邮箱 + SMTP 授权码</b>：邮箱网页版 → 设置 → 账户 → 开启 SMTP 服务 → 生成授权码（16 位字母，不是邮箱密码）。</li>
-  <li><b>你的 Blackboard 日历链接（ICS_URL）</b>：登录 bb.sustech.edu.cn → 左侧「日历」→ 页面底部
-      <b>Get External Calendar Link</b> → 复制；若以 <code>webcal://</code> 开头，改成 <code>https://</code>。</li>
-  <li><b>一个 GitHub 访问令牌（PAT）</b>：
-    <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">创建细粒度令牌</a> →
-    有效期选 7 天 → Repository access 选 <b>All repositories</b> → 权限勾选：
-    <b>Administration: Read and write</b>（建仓库）、<b>Secrets: Read and write</b>、<b>Actions: Read and write</b>，其余默认。
-    <span class="muted">部署完成后即可撤销该令牌——所有配置已写入你自己的仓库，与令牌无关。</span></li>
+  <li><b>GitHub 账号</b>（免费注册）。</li>
+  <li><b>QQ 邮箱 + SMTP 授权码</b>：邮箱网页版 → 设置 → 账户 → 开启 SMTP 服务 → 生成授权码（16 位字母，<b>不是邮箱密码</b>）。</li>
+  <li><b>BB 日历链接</b>：登录 bb.sustech.edu.cn → 左侧「日历」→ 页面底部 <b>Get External Calendar Link</b> → 复制；
+      <code>webcal://</code> 开头请改为 <code>https://</code>。</li>
+  <li><b>GitHub 访问令牌（PAT）</b>：<a href="https://github.com/settings/personal-access-tokens/new" target="_blank">创建细粒度令牌</a>
+      → 有效期 7 天 → Repository access 选 <b>All repositories</b> → 权限勾选：
+      <b>Administration · Read and write</b>（建仓库）、<b>Secrets · Read and write</b>、
+      <b>Actions · Read and write</b>、<b>Contents · Read and write</b> 与 <b>Workflows · Read and write</b>（后两项用于写入你自定义的提醒时间）。
+      <span class="muted">部署完成后即可撤销令牌。</span></li>
 </ol>
 </div>
 
-<h2>第二步：填写信息</h2>
-<label>GitHub 访问令牌（PAT）<span class="opt">必填 · 部署后可撤销</span></label>
-<input type="password" id="pat" placeholder="github_pat_... 或 ghp_..." autocomplete="off">
+<!-- ============ 表单 ============ -->
+<h2>部署信息</h2>
+<div class="card">
+  <label class="f">GitHub 访问令牌（PAT）<span class="opt">必填 · 部署后可撤销</span></label>
+  <input type="password" id="pat" placeholder="github_pat_… 或 ghp_…" autocomplete="off">
 
-<label>新仓库名<span class="opt">将创建在你的账号下，私有</span></label>
-<input type="text" id="repo" value="bb-deadline-notifier">
+  <label class="f">新仓库名<span class="opt">将创建在你的账号下 · 私有</span></label>
+  <input type="text" id="repo" value="bb-deadline-notifier">
 
-<label>发件 QQ 邮箱（SMTP_USER）<span class="opt">必填</span></label>
-<input type="text" id="smtp_user" placeholder="123456789@qq.com">
+  <label class="f">发件 QQ 邮箱（SMTP_USER）<span class="opt">必填</span></label>
+  <input type="text" id="smtp_user" placeholder="123456789@qq.com">
 
-<label>SMTP 授权码（SMTP_PASS）<span class="opt">必填 · 16 位字母</span></label>
-<input type="password" id="smtp_pass" autocomplete="off">
+  <label class="f">SMTP 授权码（SMTP_PASS）<span class="opt">必填 · 16 位字母</span></label>
+  <input type="password" id="smtp_pass" autocomplete="off">
 
-<label>收件邮箱（MAIL_TO）<span class="opt">必填 · 建议学校企业邮，腾讯企业邮有手机推送</span></label>
-<input type="text" id="mailto" placeholder="你 @mail.sustech.edu.cn 的学校邮箱">
+  <label class="f">收件邮箱（MAIL_TO）<span class="opt">必填 · 建议学校企业邮，腾讯企业邮有手机推送</span></label>
+  <input type="text" id="mailto" placeholder="你的学校邮箱">
 
-<label>Blackboard 日历链接（ICS_URL）<span class="opt">必填 · 上方第 3 项获取</span></label>
-<input type="text" id="ics" placeholder="https://bb.sustech.edu.cn/webapps/calendar/calendarFeed/.../learn.ics">
+  <label class="f">Blackboard 日历链接（ICS_URL）<span class="opt">必填</span></label>
+  <input type="text" id="ics" placeholder="https://bb.sustech.edu.cn/webapps/calendar/calendarFeed/…/learn.ics">
 
-<div class="fieldset-optional">
-  <div class="toggle" id="advToggle">▶ <b>全保真模式（选填）</b>——填了才有课程名和「已提交」过滤；留空则为纯 ICS 模式</div>
-  <div id="advBox" style="display:none">
-    <label>学校统一认证密码（SCHOOL_PASSWORD）<span class="opt">只写入你自己仓库的加密 Secrets</span></label>
+  <div class="switch-row">
+    <label class="switch"><input type="checkbox" id="loginMode"><span></span></label>
+    <div><b>启用登录模式</b><div class="muted">填写学校凭据以获得课程名与提交状态分流</div></div>
+  </div>
+  <div id="loginBox">
+    <label class="f">学校统一认证密码（SCHOOL_PASSWORD）<span class="opt">只写入你自己仓库的加密 Secrets</span></label>
     <input type="password" id="school_pw" autocomplete="off">
-    <label>学号（SUSTECH_SID）<span class="opt">填了密码则必填（CI 自动登录用）</span></label>
+    <label class="f">学号（SUSTECH_SID）<span class="opt">必填 · 云端自动登录用</span></label>
     <input type="text" id="sid" placeholder="如 01234567">
-    <label style="font-weight:400;margin-top:14px">
-      <input type="checkbox" id="grades"> 同时开启出分提醒（ENABLE_GRADES，邮件里附带新出分数）
+    <label style="font-weight:400;margin-top:16px;font-size:14px">
+      <input type="checkbox" id="grades"> 同时开启出分提醒（邮件附带新出的分数）
     </label>
   </div>
 </div>
 
-<button id="go">🚀 一键部署</button>
-<div class="warn" id="hint" style="display:none;margin-top:14px"></div>
-<div id="log"></div>
-<div class="ok-box" id="done">
-  <b>部署完成！</b> 首次运行已在后台触发，几分钟内你的收件邮箱会收到第一封测试邮件。<br><br>
-  <a id="linkRepo" target="_blank">打开你的仓库</a> ·
-  <a id="linkActions" target="_blank">查看运行状态</a><br><br>
-  <b>现在请去撤销 PAT：</b>
-  <a href="https://github.com/settings/personal-access-tokens" target="_blank">令牌管理页</a> → Delete。
-  之后想改配置，直接在仓库 Settings → Secrets and variables 里编辑即可。
+<!-- ============ 时间设置 ============ -->
+<h2>提醒时间<span class="muted" style="font-size:14px;font-weight:400"> · 北京时间，可全部保持默认</span></h2>
+<div class="card">
+  <div class="times-grid">
+    <div class="t"><label>📰 每日日报</label><input type="time" id="t_digest" value="08:00"></div>
+    <div class="t"><label>⏰ 分档检查 ①</label><input type="time" id="t_esc1" value="08:10"></div>
+    <div class="t"><label>⏰ 分档检查 ②</label><input type="time" id="t_esc2" value="14:00"></div>
+    <div class="t"><label>⏰ 分档检查 ③</label><input type="time" id="t_esc3" value="20:00"></div>
+  </div>
+  <p class="muted" style="margin-top:14px">日报每天一封（全部交清则静默）；分档检查在作业剩余时间跨进 48 / 24 / 12 小时窗口时各提醒一封。
+  四个时刻需互不相同且间隔 ≥ 5 分钟。部署后想改，在本页重新填写即可（会更新你仓库里的时间表）。</p>
 </div>
 
-<h2>不想用 GitHub 的同学（零安装方案）</h2>
+<button class="primary" id="go">部署</button>
+<div class="warn" id="hint"></div>
+<div id="log"></div>
+<div id="done">
+  <b>部署完成。</b>首次运行已在后台触发，几分钟内收件邮箱会收到第一封邮件。<br><br>
+  <a id="linkRepo" target="_blank">打开你的仓库</a> ·
+  <a id="linkActions" target="_blank">查看运行状态</a><br><br>
+  <b>请现在撤销 PAT：</b><a href="https://github.com/settings/personal-access-tokens" target="_blank">令牌管理页</a> → Delete。
+  之后的配置修改直接在仓库 Settings → Secrets and variables 进行。
+</div>
+
+<!-- ============ 零安装替代 ============ -->
+<h2>不想用 GitHub？</h2>
 <details>
-<summary>我只要手机上能收到提醒，不想建仓库</summary>
-<p class="muted">把上面第 3 项获取的 ICS 链接订阅进手机日历即可：iPhone「设置 → 日历 → 日历账户 →
+<summary>我只要手机上有提醒，不想建仓库</summary>
+<p class="muted" style="margin-top:10px">把上面第 3 项的 ICS 链接订阅进手机日历即可：iPhone「设置 → 日历 → 日历账户 →
 添加账户 → 其他 → 添加订阅日历」，粘贴链接；再在 设置 → 日历 → 默认提醒 里设提前量。
-一次配置、自动同步、零维护——代价是没有邮件汇总和提交过滤，刷新也略有延迟。</p>
+一次配置、自动同步、零维护——代价是没有邮件汇总和提交分流，同步也略有延迟。</p>
 </details>
 
-<p class="muted" style="margin-top:40px">本工具基于 <a href="https://github.com/wormforce/sustech-cli" target="_blank">sustech-cli</a>
-（PolyForm 非商业许可，请勿用于收费服务）。项目不做、也不接受任何验证码自动绕过。</p>
+<footer>基于 <a href="https://github.com/wormforce/sustech-cli" target="_blank">sustech-cli</a>（PolyForm 非商业许可，请勿用于收费服务）。
+本项目不做、也不接受任何验证码自动绕过。</footer>
+</div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -126,14 +231,13 @@ function log(msg, cls) {
   logBox.appendChild(line);
   logBox.scrollTop = logBox.scrollHeight;
 }
-function fail(msg) { log('✗ ' + msg, 'err'); $('go').disabled = false; $('hint').style.display='block'; $('hint').textContent = msg; }
-
-$('advToggle').onclick = () => {
-  const box = $('advBox'), open = box.style.display !== 'none';
-  box.style.display = open ? 'none' : 'block';
-  $('advToggle').firstChild.textContent = open ? '▶ ' : '▼ ';
-  document.querySelector('.fieldset-optional').classList.toggle('open', !open);
-};
+function fail(msg) {
+  log('✗ ' + msg, 'err');
+  $('go').disabled = false;
+  const h = $('hint'); h.style.display = 'block'; h.textContent = msg;
+  h.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+$('loginMode').onchange = e => $('loginBox').classList.toggle('on', e.target.checked);
 
 const API = 'https://api.github.com';
 const TEMPLATE_OWNER = 'aNother1332', TEMPLATE_REPO = 'bb-deadline-notifier-template';
@@ -145,28 +249,68 @@ async function api(path, token, opts = {}) {
       Authorization: 'Bearer ' + token,
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
-      ...(opts.body ? {'Content-Type': 'application/json'} : {}),
+      ...(opts.body ? {'Content-Type':'application/json'} : {}),
       ...(opts.headers || {}),
     },
   });
   const body = r.status === 204 ? null : await r.json().catch(() => null);
   if (!r.ok) {
     const detail = body && (body.message || body.error) || ('HTTP ' + r.status);
-    throw new Error(detail + (r.status === 403 ? '（多半是 PAT 权限不足或未勾选所需权限）' : ''));
+    throw new Error(detail + (r.status === 403 ? '（多半是 PAT 权限不足）' : ''));
   }
   return body;
 }
+async function rawApi(path, token) {
+  const r = await fetch(API + path, { headers: {
+    Authorization: 'Bearer ' + token, Accept: 'application/vnd.github.raw',
+  }});
+  const text = await r.text();
+  if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + text.slice(0, 120));
+  return text;
+}
 
-async function setSecret(fullName, name, value, token) {
-  const pk = await api(`/repos/${fullName}/actions/secrets/public-key`, token);
+async function setSecret(full, name, value, token) {
+  const pk = await api(`/repos/${full}/actions/secrets/public-key`, token);
   const sealed = sodium.crypto_box_seal(
     sodium.from_string(value),
     sodium.from_base64(pk.key, sodium.base64_variants.ORIGINAL));
-  await api(`/repos/${fullName}/actions/secrets/${name}`, token, {
+  await api(`/repos/${full}/actions/secrets/${name}`, token, {
     method: 'PUT',
     body: JSON.stringify({
       encrypted_value: sodium.to_base64(sealed, sodium.base64_variants.ORIGINAL),
       key_id: pk.key_id,
+    }),
+  });
+}
+
+/* 北京时间 HH:MM → 每日 cron（UTC，减 8 小时跨日自动回绕） */
+function toCron(hm) {
+  const [h, m] = hm.split(':').map(Number);
+  const uh = (h - 8 + 24) % 24;
+  return `${String(m).padStart(2,'0')} ${String(uh).padStart(2,'0')} * * *`;
+}
+const b64utf8 = s => btoa(unescape(encodeURIComponent(s)));
+
+async function applySchedule(full, token, digest, escs) {
+  const path = '/repos/' + full + '/contents/.github/workflows/notify.yml';
+  let text = await rawApi(path, token);
+  const subs = [['SCHEDULE_DIGEST', digest], ['SCHEDULE_ESC_1', escs[0]],
+                ['SCHEDULE_ESC_2', escs[1]], ['SCHEDULE_ESC_3', escs[2]]];
+  for (const [marker, hm] of subs) {
+    const re = new RegExp('(cron:\\s*")[^"]+("[^\\n]*#\\s*' + marker + ')');
+    if (!re.test(text)) throw new Error('时间标记缺失：' + marker);
+    text = text.replace(re, '$1' + toCron(hm) + '$2');
+  }
+  const reM = /(github\.event\.schedule[^=\n]*=\s*")[^"]+([^\n]*#\s*DIGEST_CRON_MATCH)/;
+  if (!reM.test(text)) throw new Error('时间标记缺失：DIGEST_CRON_MATCH');
+  text = text.replace(reM, '$1' + toCron(digest) + '$2');
+  const meta = await api(path, token);  // 取 sha
+  await api(path, token, {
+    method: 'PUT',
+    body: JSON.stringify({
+      message: 'chore: 自定义提醒时间（日报 ' + digest + '，分档 ' + escs.join(' / ') + '）',
+      content: b64utf8(text),
+      sha: meta.sha,
     }),
   });
 }
@@ -176,9 +320,13 @@ $('go').onclick = async () => {
   const token = $('pat').value.trim();
   const repo = $('repo').value.trim().replace(/\s+/g, '-');
   const smtpUser = $('smtp_user').value.trim(), smtpPass = $('smtp_pass').value.trim();
-  const mailto = $('mailto').value.trim(), ics = $('ics').value.trim().replace(/^webcal:/i, 'https:');
+  const mailto = $('mailto').value.trim();
+  const ics = $('ics').value.trim().replace(/^webcal:/i, 'https:');
+  const loginMode = $('loginMode').checked;
   const schoolPw = $('school_pw').value, sid = $('sid').value.trim();
   const grades = $('grades').checked;
+  const digest = $('t_digest').value || '08:00';
+  const escs = [$('t_esc1').value || '08:10', $('t_esc2').value || '14:00', $('t_esc3').value || '20:00'];
 
   const missing = [];
   if (!token) missing.push('PAT');
@@ -187,39 +335,47 @@ $('go').onclick = async () => {
   if (!smtpPass) missing.push('SMTP 授权码');
   if (!mailto) missing.push('收件邮箱');
   if (!ics) missing.push('ICS 链接');
-  if (schoolPw && !sid) missing.push('学号（填了学校密码就必须填）');
+  if (loginMode && !schoolPw) missing.push('学校密码（已开启登录模式）');
+  if (loginMode && !sid) missing.push('学号（已开启登录模式）');
   if (missing.length) return fail('缺少：' + missing.join('、'));
-  if (!/^https:\/\/bb\.sustech\.edu\.cn\//.test(ics)) log('⚠ ICS 链接看起来不是 bb.sustech.edu.cn 的，继续尝试…', 'dim');
+
+  const allTimes = [digest, ...escs];
+  const mins = allTimes.map(t => t.split(':').map(Number)).map(([h, m]) => h * 60 + m).sort((a, b) => a - b);
+  for (let i = 1; i < mins.length; i++)
+    if (mins[i] - mins[i - 1] < 5) return fail('四个提醒时刻需互不相同且间隔不少于 5 分钟');
+  if (!/^https:\/\/bb\.sustech\.edu\.cn\//.test(ics)) log('⚠ ICS 链接不是 bb.sustech.edu.cn 域名，继续尝试…', 'dim');
 
   log('初始化加密库…', 'dim');
   await sodium.ready;
-
   try {
     log('验证令牌…');
     const user = await api('/user', token);
-    log(`✓ 已认证：${user.login}`, 'ok');
+    log('✓ 已认证：' + user.login, 'ok');
 
-    log(`从模板生成私有仓库 ${user.login}/${repo}…`);
+    log('从模板生成私有仓库 ' + user.login + '/' + repo + '…');
     try {
       await api(`/repos/${TEMPLATE_OWNER}/${TEMPLATE_REPO}/generate`, token, {
         method: 'POST',
         body: JSON.stringify({ name: repo, private: true, description: 'SUSTech Blackboard deadline email notifier' }),
       });
     } catch (e) {
-      if (/already exists|name already/i.test(e.message)) {
-        log('⚠ 同名仓库已存在，将直接向它写入配置', 'dim');
-      } else throw e;
+      if (/already exists|name already/i.test(e.message)) log('⚠ 同名仓库已存在，将直接更新它的配置', 'dim');
+      else throw e;
     }
-    const full = `${user.login}/${repo}`;
+    const full = user.login + '/' + repo;
     log('✓ 仓库就绪', 'ok');
 
     log('写入 Secrets（浏览器内加密，直连 GitHub）…', 'dim');
-    await setSecret(full, 'ICS_URL', ics, token);          log('  ✓ ICS_URL', 'ok');
-    await setSecret(full, 'SMTP_USER', smtpUser, token);   log('  ✓ SMTP_USER', 'ok');
-    await setSecret(full, 'SMTP_PASS', smtpPass, token);   log('  ✓ SMTP_PASS', 'ok');
-    await setSecret(full, 'MAIL_TO', mailto, token);       log('  ✓ MAIL_TO', 'ok');
-    if (schoolPw) {
-      await setSecret(full, 'SCHOOL_PASSWORD', schoolPw, token); log('  ✓ SCHOOL_PASSWORD（全保真模式）', 'ok');
+    await setSecret(full, 'ICS_URL', ics, token);        log('  ✓ ICS_URL', 'ok');
+    await setSecret(full, 'SMTP_USER', smtpUser, token); log('  ✓ SMTP_USER', 'ok');
+    await setSecret(full, 'SMTP_PASS', smtpPass, token); log('  ✓ SMTP_PASS', 'ok');
+    await setSecret(full, 'MAIL_TO', mailto, token);     log('  ✓ MAIL_TO', 'ok');
+    if (!loginMode) {
+      // 若该仓库此前配过登录模式，清除学校密码以回到基础模式
+      try { await api(`/repos/${full}/actions/secrets/SCHOOL_PASSWORD`, token, { method: 'DELETE' });
+            log('  ✓ 已清除 SCHOOL_PASSWORD（基础模式）', 'ok'); } catch (e) { /* 不存在则忽略 */ }
+    } else {
+      await setSecret(full, 'SCHOOL_PASSWORD', schoolPw, token); log('  ✓ SCHOOL_PASSWORD（登录模式）', 'ok');
       await api(`/repos/${full}/actions/variables/SUSTECH_SID`, token, {
         method: 'PUT', body: JSON.stringify({ value: sid }),
       }); log('  ✓ SUSTECH_SID', 'ok');
@@ -228,16 +384,26 @@ $('go').onclick = async () => {
       await api(`/repos/${full}/actions/variables/ENABLE_GRADES`, token, {
         method: 'PUT', body: JSON.stringify({ value: '1' }),
       }); log('  ✓ ENABLE_GRADES=1', 'ok');
+    } else {
+      try { await api(`/repos/${full}/actions/variables/ENABLE_GRADES`, token, { method: 'DELETE' }); } catch (e) {}
     }
 
-    log('触发首次运行（escalate 模式）…');
+    log('写入提醒时间表（日报 ' + digest + '，分档 ' + escs.join(' / ') + '）…');
+    try {
+      await applySchedule(full, token, digest, escs);
+      log('✓ 时间表已更新', 'ok');
+    } catch (e) {
+      log('⚠ 时间表写入失败：' + e.message + ' —— 已保留默认时间（08:00 / 08:10 / 14:00 / 20:00）', 'dim');
+    }
+
+    log('触发首次运行…');
     await api(`/repos/${full}/actions/workflows/notify.yml/dispatches`, token, {
       method: 'POST', body: JSON.stringify({ ref: 'main', inputs: { mode: 'escalate' } }),
     });
     log('✓ 已触发', 'ok');
 
-    $('linkRepo').href = `https://github.com/${full}`;
-    $('linkActions').href = `https://github.com/${full}/actions`;
+    $('linkRepo').href = 'https://github.com/' + full;
+    $('linkActions').href = 'https://github.com/' + full + '/actions';
     $('done').style.display = 'block';
     $('done').scrollIntoView({ behavior: 'smooth' });
     log('全部完成。记得撤销 PAT。', 'ok');
