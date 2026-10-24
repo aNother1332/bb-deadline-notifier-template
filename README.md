@@ -5,8 +5,9 @@
 ## 推荐安装方式：一键向导
 
 打开 **[一键部署向导](https://another1332.github.io/bb-deadline-notifier-template/setup.html)**，
-按提示填入 QQ 邮箱授权码、BB 日历链接和一个临时 GitHub 令牌，点一下按钮即完成部署。
-不填学校密码 = 纯 ICS 模式；填上 = 全保真模式（课程名 + 已提交分流）。
+按提示填入 QQ 邮箱授权码、BB 日历链接和一个临时 GitHub 令牌，自选提醒时间和模式，点一下按钮即完成部署。
+不开启登录模式 = 基础模式（纯 ICS，零学校凭据）；开启并填写学号密码 = 登录模式（课程名 + 提交状态分流）。
+向导页顶端有醒目的红色声明：本网站不存储任何用户数据——纯静态页，数据只从浏览器直达 GitHub。
 
 ## 手动安装（不想用向导的话）
 
@@ -18,18 +19,20 @@
    | `ICS_URL` | BB → 日历 → Get External Calendar Link（`webcal://` 改 `https://`） |
    | `SMTP_USER` / `SMTP_PASS` | 个人 QQ 邮箱地址 / SMTP 授权码（设置 → 账户 → 开启 SMTP） |
    | `MAIL_TO` | 收件邮箱（建议学校企业邮，有手机推送） |
-   | `SCHOOL_PASSWORD` | 学校统一认证密码（**选填**；不填 = 纯 ICS 模式） |
+   | `SCHOOL_PASSWORD` | 学校统一认证密码（**选填**；不填 = 基础模式，填 = 登录模式） |
 
 3. 若填了 `SCHOOL_PASSWORD`，在同一页 **Variables** 里加 `SUSTECH_SID` = 你的学号。
 4. Actions 页面若提示 workflows 被禁用，点 "I understand my workflows, go ahead and enable them"。
 5. Actions → notify → Run workflow → mode 选 `escalate`，首次运行验证。收件箱应收到第一封邮件。
+6. 提醒时间默认为日报 08:00、分档检查 08:10 / 14:00 / 20:00（北京时间）；手动改法：编辑
+   `.github/workflows/notify.yml` 中带 `SCHEDULE_*` 标记的 cron（UTC = 北京时间减 8 小时）。
 
 ## 邮件策略
 
 - **每日日报**（北京时间 08:00）：未来 14 天内所有**未提交**作业汇总；全部交清则不发（静默 = 安全）。
 - **分档升级提醒**（每天 08:10 / 14:00 / 20:00 检查）：作业剩余时间跨进 48h / 24h / 12h 窗口时各提醒一封；
   **已提交的也会提醒**（标注「已提交·请复核」，防状态误标/漏交）；老师顺延 deadline 会重新触发。
-- 认证层故障时自动降级为 ICS 数据源，邮件带 `[降级]` 前缀（无课程名、未分流），提醒不断电。
+- 认证层故障时自动降级为 ICS 数据源，邮件带 `[降级]` 前缀（无课程名、未分流）；两种模式的原理与区别详见向导页，提醒不断电。
 - 可选：Variables 加 `ENABLE_GRADES=1` 开启出分提醒；`TIER_HOURS`、`LOOKAHEAD_DAYS` 同理可调。
 
 ## 不要 GitHub 的零安装替代
