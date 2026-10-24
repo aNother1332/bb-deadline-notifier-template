@@ -44,9 +44,14 @@ Blackboard 的截止日期藏在每门课的深处，首页看不到，容易忘
 
 ![QQ 邮箱授权码](docs/img/qq-smtp-help.png)
 
-**PAT 怎么建**（官方文档截图）：
+**PAT 怎么建**（完整路径六步，个人内容已打码）：
 
-![PAT 指引](docs/img/pat-guide.png)
+![步骤一 头像 Settings](docs/img/gh-step1-avatar.png)
+![步骤二 Developer settings](docs/img/gh-step2-settings.png)
+![步骤三 Fine-grained tokens](docs/img/gh-step3-devsettings.png)
+![步骤四 Generate new token](docs/img/gh-step4-patlist.png)
+![步骤五 有效期与仓库访问](docs/img/gh-step5-expiry-repo.png)
+![步骤六 权限设置](docs/img/gh-step6-permissions.png)
 
 ## 手动安装（不想用向导）
 
