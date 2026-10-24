@@ -17,6 +17,9 @@
       "PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
     color:var(--text); background:var(--bg); line-height:1.6; font-size:16px;
   }
+  .oss-band { background:#1d1d1f; color:#d1d1d6; text-align:center; padding:10px 20px;
+    font-size:13.5px; }
+  .oss-band a { color:#4493f8; text-decoration:underline; font-weight:600; }
   .privacy-band {
     background:var(--red); color:#fff; text-align:center; padding:14px 20px;
     font-weight:700; font-size:16px; letter-spacing:.02em;
@@ -97,6 +100,9 @@
 </head>
 <body>
 
+<div class="oss-band">⭐ 本项目已在 GitHub 开源 ·
+  <a href="https://github.com/aNother1332/bb-deadline-notifier-template" target="_blank">bb-deadline-notifier-template</a>
+  · 欢迎提 Issue 与 Star</div>
 <div class="privacy-band">🔒 本网站不存储任何用户数据
   <small>纯静态网页 · 你填写的信息只从你的浏览器加密直达 GitHub 官方 API · 关闭页面即消失</small>
 </div>
@@ -162,9 +168,9 @@
     <details><summary>查看完整创建路径与步骤截图（个人内容已打码）</summary>
       <p class="muted">路径：右上角头像 → Settings → 侧栏最底部 Developer settings → Personal access
       tokens → Fine-grained tokens → Generate new token。</p>
-      <img class="shot" src="docs/img/gh-step1-avatar.png" alt="步骤一：点击右上角头像，选择 Settings">
-      <img class="shot narrow" src="docs/img/gh-step2-settings.png" alt="步骤二：设置页侧栏最底部点击 Developer settings">
-      <img class="shot narrow" src="docs/img/gh-step3-devsettings.png" alt="步骤三：点击 Fine-grained tokens">
+      <img class="shot" src="docs/img/gh-step1-avatar.png?v=2" alt="步骤一：点击右上角头像，选择 Settings">
+      <img class="shot narrow" src="docs/img/gh-step2-settings.png?v=2" alt="步骤二：设置页侧栏最底部点击 Developer settings">
+      <img class="shot narrow" src="docs/img/gh-step3-devsettings.png?v=2" alt="步骤三：点击 Fine-grained tokens">
       <img class="shot" src="docs/img/gh-step4-patlist.png" alt="步骤四：点击 Generate new token">
       <img class="shot" src="docs/img/gh-step5-expiry-repo.png" alt="步骤五：有效期选永久，仓库访问选 All repositories">
       <img class="shot" src="docs/img/gh-step6-permissions.png" alt="步骤六：添加五项权限并设为 Read and write">
