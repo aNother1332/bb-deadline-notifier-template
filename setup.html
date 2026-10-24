@@ -87,7 +87,10 @@
   .steps li { margin:8px 0; }
   code { font-family:ui-monospace,"SF Mono",Consolas,monospace; font-size:.9em;
     background:var(--fill); padding:1px 6px; border-radius:6px; }
-  details { margin-top:18px; } details summary { cursor:pointer; font-weight:600; color:var(--accent); }
+  details { margin-top:10px; } details summary { cursor:pointer; font-weight:600; color:var(--accent); }
+  img.shot { display:block; width:100%; margin-top:12px; border-radius:12px;
+    border:1px solid var(--hair); box-shadow:0 1px 6px rgba(0,0,0,.06); }
+  details p { margin-top:8px; margin-bottom:6px; }
   footer { margin-top:70px; color:var(--sub); font-size:13px; }
 </style>
 </head>
@@ -135,15 +138,31 @@
 <h2>准备材料</h2>
 <div class="card">
 <ol class="steps">
-  <li><b>GitHub 账号</b>（免费注册）。</li>
-  <li><b>QQ 邮箱 + SMTP 授权码</b>：邮箱网页版 → 设置 → 账户 → 开启 SMTP 服务 → 生成授权码（16 位字母，<b>不是邮箱密码</b>）。</li>
-  <li><b>BB 日历链接</b>：登录 bb.sustech.edu.cn → 左侧「日历」→ 页面底部 <b>Get External Calendar Link</b> → 复制；
-      <code>webcal://</code> 开头请改为 <code>https://</code>。</li>
+  <li><b>GitHub 账号</b>（<a href="https://github.com/signup" target="_blank">免费注册</a>，一分钟）。</li>
+  <li><b>QQ 邮箱 + SMTP 授权码</b>：邮箱网页版 → 设置 → 账户 → 开启 SMTP 服务 → 生成授权码（16 位字母，<b>不是邮箱密码</b>）。
+    <details><summary>查看官方指引截图</summary>
+      <img class="shot" src="docs/img/qq-smtp-help.png" alt="QQ 邮箱官方帮助：如何开启 SMTP 并生成授权码">
+      <p class="muted">截图来自 <a href="https://help.mail.qq.com/detail/106/985" target="_blank">QQ 邮箱官方帮助 · 授权码说明</a>；
+      开启服务需要手机短信或微信扫码验证，授权码只显示一次，记得保存。</p>
+    </details></li>
+  <li><b>BB 日历链接</b>：登录 bb.sustech.edu.cn → 左侧「日历」→ 日历页面左下角 <b>「获取外部日程表链接」</b> → 复制弹窗中的 URL；
+      <code>webcal://</code> 开头请改为 <code>https://</code>。
+    <details><summary>查看操作截图（隐私内容已打码）</summary>
+      <img class="shot" src="docs/img/bb-calendar-page.png" alt="Blackboard 日历页面（课程列表已打码）">
+      <img class="shot" src="docs/img/bb-calendar-link.png" alt="获取外部日程表链接弹窗（URL 已打码）">
+      <p class="muted">上图：日历页面，入口按钮在左下角（示例图的课程列表已打码）。
+      下图：点击按钮后的弹窗——里面的 iCal URL 就是你要复制的 ICS 链接（示例图中已打码，因为它等同于你的私人令牌，<b>不要发给任何人</b>）。</p>
+    </details></li>
   <li><b>GitHub 访问令牌（PAT）</b>：<a href="https://github.com/settings/personal-access-tokens/new" target="_blank">创建细粒度令牌</a>
       → 有效期 7 天 → Repository access 选 <b>All repositories</b> → 权限勾选：
       <b>Administration · Read and write</b>（建仓库）、<b>Secrets · Read and write</b>、
       <b>Actions · Read and write</b>、<b>Contents · Read and write</b> 与 <b>Workflows · Read and write</b>（后两项用于写入你自定义的提醒时间）。
-      <span class="muted">部署完成后即可撤销令牌。</span></li>
+      <span class="muted">部署完成后即可撤销令牌。</span>
+    <details><summary>查看官方文档截图</summary>
+      <img class="shot" src="docs/img/pat-guide.png" alt="GitHub 官方文档：管理个人访问令牌">
+      <p class="muted">截图来自 <a href="https://docs.github.com/zh/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens" target="_blank">GitHub 官方文档 · 管理个人访问令牌</a>。
+      细粒度令牌的权限在创建页的 Repository permissions 区勾选。</p>
+    </details></li>
 </ol>
 </div>
 
