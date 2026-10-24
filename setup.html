@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BB Deadline Notifier · 一键部署</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/libsodium-wrappers/0.7.15/browsers-sumo/sodium.js"></script>
+<style>
+  :root { --fg:#1f2328; --muted:#656d76; --line:#d0d7de; --bg:#f6f8fa; --accent:#1a7f37; --err:#cf222e; }
+  * { box-sizing:border-box; }
+  body { font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+         color:var(--fg); max-width:760px; margin:0 auto; padding:24px 20px 80px; line-height:1.65; }
+  h1 { font-size:1.6rem; } h2 { font-size:1.15rem; margin-top:2em; border-bottom:1px solid var(--line); padding-bottom:.35em; }
+  .card { background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:18px 20px; margin:14px 0; }
+  .muted { color:var(--muted); font-size:.92em; }
+  label { display:block; font-weight:600; margin:14px 0 4px; font-size:.95em; }
+  label .opt { font-weight:400; color:var(--muted); }
+  input[type=text], input[type=password] { width:100%; padding:9px 11px; border:1px solid var(--line);
+    border-radius:7px; font-size:15px; font-family:inherit; }
+  input:focus { outline:2px solid #0969da2e; border-color:#0969da; }
+  .fieldset-optional { border-left:3px solid var(--line); padding-left:16px; margin-top:18px; }
+  .fieldset-optional.open { border-left-color:var(--accent); }
+  button { background:#1f883d; color:#fff; border:none; border-radius:8px; padding:12px 26px;
+    font-size:16px; font-weight:600; cursor:pointer; margin-top:22px; }
+  button:disabled { background:#8c959f; cursor:not-allowed; }
+  #log { background:#0d1117; color:#c9d1d9; border-radius:10px; padding:14px 16px; margin-top:18px;
+    font:12.5px/1.7 ui-monospace,Consolas,monospace; white-space:pre-wrap; display:none; }
+  #log .ok { color:#3fb950; } #log .err { color:#f85149; } #log .dim { color:#8b949e; }
+  .steps li { margin:6px 0; }
+  .warn { color:#9a6700; background:#fff8c5; border:1px solid #d4a72c66; padding:10px 14px; border-radius:8px; font-size:.92em; }
+  .ok-box { background:#dafbe1; border:1px solid #4ac26b; border-radius:10px; padding:16px 18px; margin-top:18px; display:none; }
+  a { color:#0969da; }
+  .toggle { cursor:pointer; user-select:none; }
+  details summary { cursor:pointer; font-weight:600; margin-top:10px; }
+</style>
+</head>
+<body>
+<h1>📚 BB Deadline Notifier · 一键部署</h1>
+<p class="muted">为南方科技大学 Blackboard 作业截止日期建立邮件提醒。本页面是<b>纯静态页</b>：
+你填入的信息只从你的浏览器直接发往 GitHub 官方 API，没有也不经过任何中间服务器，页面不保存任何内容。</p>
+
+<div class="card">
+<b>它将为你做什么：</b>在你的 GitHub 账号下创建一个<b>私有仓库</b>（由公开模板生成），写入提醒所需的
+Secrets，并触发首次运行。此后每天 08:00 一封未提交作业日报、08:10 / 14:00 / 20:00 三次
+48/24/12 小时分档提醒（已提交的也会提醒并标注「已提交·请复核」）。
+</div>
+
+<h2>第一步：准备材料（5 分钟）</h2>
+<div class="card">
+<ol class="steps">
+  <li><b>GitHub 账号</b>（没有就注册一个，免费）。</li>
+  <li><b>一个个人 QQ 邮箱 + SMTP 授权码</b>：邮箱网页版 → 设置 → 账户 → 开启 SMTP 服务 → 生成授权码（16 位字母，不是邮箱密码）。</li>
+  <li><b>你的 Blackboard 日历链接（ICS_URL）</b>：登录 bb.sustech.edu.cn → 左侧「日历」→ 页面底部
+      <b>Get External Calendar Link</b> → 复制；若以 <code>webcal://</code> 开头，改成 <code>https://</code>。</li>
+  <li><b>一个 GitHub 访问令牌（PAT）</b>：
+    <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">创建细粒度令牌</a> →
+    有效期选 7 天 → Repository access 选 <b>All repositories</b> → 权限勾选：
+    <b>Administration: Read and write</b>（建仓库）、<b>Secrets: Read and write</b>、<b>Actions: Read and write</b>，其余默认。
+    <span class="muted">部署完成后即可撤销该令牌——所有配置已写入你自己的仓库，与令牌无关。</span></li>
+</ol>
+</div>
+
+<h2>第二步：填写信息</h2>
+<label>GitHub 访问令牌（PAT）<span class="opt">必填 · 部署后可撤销</span></label>
+<input type="password" id="pat" placeholder="github_pat_... 或 ghp_..." autocomplete="off">
+
+<label>新仓库名<span class="opt">将创建在你的账号下，私有</span></label>
+<input type="text" id="repo" value="bb-deadline-notifier">
+
+<label>发件 QQ 邮箱（SMTP_USER）<span class="opt">必填</span></label>
+<input type="text" id="smtp_user" placeholder="123456789@qq.com">
+
+<label>SMTP 授权码（SMTP_PASS）<span class="opt">必填 · 16 位字母</span></label>
+<input type="password" id="smtp_pass" autocomplete="off">
+
+<label>收件邮箱（MAIL_TO）<span class="opt">必填 · 建议学校企业邮，腾讯企业邮有手机推送</span></label>
+<input type="text" id="mailto" placeholder="你 @mail.sustech.edu.cn 的学校邮箱">
+
+<label>Blackboard 日历链接（ICS_URL）<span class="opt">必填 · 上方第 3 项获取</span></label>
+<input type="text" id="ics" placeholder="https://bb.sustech.edu.cn/webapps/calendar/calendarFeed/.../learn.ics">
+
+<div class="fieldset-optional">
+  <div class="toggle" id="advToggle">▶ <b>全保真模式（选填）</b>——填了才有课程名和「已提交」过滤；留空则为纯 ICS 模式</div>
+  <div id="advBox" style="display:none">
+    <label>学校统一认证密码（SCHOOL_PASSWORD）<span class="opt">只写入你自己仓库的加密 Secrets</span></label>
+    <input type="password" id="school_pw" autocomplete="off">
+    <label>学号（SUSTECH_SID）<span class="opt">填了密码则必填（CI 自动登录用）</span></label>
+    <input type="text" id="sid" placeholder="如 01234567">
+    <label style="font-weight:400;margin-top:14px">
+      <input type="checkbox" id="grades"> 同时开启出分提醒（ENABLE_GRADES，邮件里附带新出分数）
+    </label>
+  </div>
+</div>
+
+<button id="go">🚀 一键部署</button>
+<div class="warn" id="hint" style="display:none;margin-top:14px"></div>
+<div id="log"></div>
+<div class="ok-box" id="done">
+  <b>部署完成！</b> 首次运行已在后台触发，几分钟内你的收件邮箱会收到第一封测试邮件。<br><br>
+  <a id="linkRepo" target="_blank">打开你的仓库</a> ·
+  <a id="linkActions" target="_blank">查看运行状态</a><br><br>
+  <b>现在请去撤销 PAT：</b>
+  <a href="https://github.com/settings/personal-access-tokens" target="_blank">令牌管理页</a> → Delete。
+  之后想改配置，直接在仓库 Settings → Secrets and variables 里编辑即可。
+</div>
+
+<h2>不想用 GitHub 的同学（零安装方案）</h2>
+<details>
+<summary>我只要手机上能收到提醒，不想建仓库</summary>
+<p class="muted">把上面第 3 项获取的 ICS 链接订阅进手机日历即可：iPhone「设置 → 日历 → 日历账户 →
+添加账户 → 其他 → 添加订阅日历」，粘贴链接；再在 设置 → 日历 → 默认提醒 里设提前量。
+一次配置、自动同步、零维护——代价是没有邮件汇总和提交过滤，刷新也略有延迟。</p>
+</details>
+
+<p class="muted" style="margin-top:40px">本工具基于 <a href="https://github.com/wormforce/sustech-cli" target="_blank">sustech-cli</a>
+（PolyForm 非商业许可，请勿用于收费服务）。项目不做、也不接受任何验证码自动绕过。</p>
+
+<script>
+const $ = id => document.getElementById(id);
+const logBox = $('log');
+function log(msg, cls) {
+  logBox.style.display = 'block';
+  const line = document.createElement('div');
+  if (cls) line.className = cls;
+  line.textContent = msg;
+  logBox.appendChild(line);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+function fail(msg) { log('✗ ' + msg, 'err'); $('go').disabled = false; $('hint').style.display='block'; $('hint').textContent = msg; }
+
+$('advToggle').onclick = () => {
+  const box = $('advBox'), open = box.style.display !== 'none';
+  box.style.display = open ? 'none' : 'block';
+  $('advToggle').firstChild.textContent = open ? '▶ ' : '▼ ';
+  document.querySelector('.fieldset-optional').classList.toggle('open', !open);
+};
+
+const API = 'https://api.github.com';
+const TEMPLATE_OWNER = 'aNother1332', TEMPLATE_REPO = 'bb-deadline-notifier-template';
+
+async function api(path, token, opts = {}) {
+  const r = await fetch(API + path, {
+    ...opts,
+    headers: {
+      Authorization: 'Bearer ' + token,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+      ...(opts.body ? {'Content-Type': 'application/json'} : {}),
+      ...(opts.headers || {}),
+    },
+  });
+  const body = r.status === 204 ? null : await r.json().catch(() => null);
+  if (!r.ok) {
+    const detail = body && (body.message || body.error) || ('HTTP ' + r.status);
+    throw new Error(detail + (r.status === 403 ? '（多半是 PAT 权限不足或未勾选所需权限）' : ''));
+  }
+  return body;
+}
+
+async function setSecret(fullName, name, value, token) {
+  const pk = await api(`/repos/${fullName}/actions/secrets/public-key`, token);
+  const sealed = sodium.crypto_box_seal(
+    sodium.from_string(value),
+    sodium.from_base64(pk.key, sodium.base64_variants.ORIGINAL));
+  await api(`/repos/${fullName}/actions/secrets/${name}`, token, {
+    method: 'PUT',
+    body: JSON.stringify({
+      encrypted_value: sodium.to_base64(sealed, sodium.base64_variants.ORIGINAL),
+      key_id: pk.key_id,
+    }),
+  });
+}
+
+$('go').onclick = async () => {
+  $('go').disabled = true; $('hint').style.display = 'none';
+  const token = $('pat').value.trim();
+  const repo = $('repo').value.trim().replace(/\s+/g, '-');
+  const smtpUser = $('smtp_user').value.trim(), smtpPass = $('smtp_pass').value.trim();
+  const mailto = $('mailto').value.trim(), ics = $('ics').value.trim().replace(/^webcal:/i, 'https:');
+  const schoolPw = $('school_pw').value, sid = $('sid').value.trim();
+  const grades = $('grades').checked;
+
+  const missing = [];
+  if (!token) missing.push('PAT');
+  if (!repo) missing.push('仓库名');
+  if (!smtpUser) missing.push('发件邮箱');
+  if (!smtpPass) missing.push('SMTP 授权码');
+  if (!mailto) missing.push('收件邮箱');
+  if (!ics) missing.push('ICS 链接');
+  if (schoolPw && !sid) missing.push('学号（填了学校密码就必须填）');
+  if (missing.length) return fail('缺少：' + missing.join('、'));
+  if (!/^https:\/\/bb\.sustech\.edu\.cn\//.test(ics)) log('⚠ ICS 链接看起来不是 bb.sustech.edu.cn 的，继续尝试…', 'dim');
+
+  log('初始化加密库…', 'dim');
+  await sodium.ready;
+
+  try {
+    log('验证令牌…');
+    const user = await api('/user', token);
+    log(`✓ 已认证：${user.login}`, 'ok');
+
+    log(`从模板生成私有仓库 ${user.login}/${repo}…`);
+    try {
+      await api(`/repos/${TEMPLATE_OWNER}/${TEMPLATE_REPO}/generate`, token, {
+        method: 'POST',
+        body: JSON.stringify({ name: repo, private: true, description: 'SUSTech Blackboard deadline email notifier' }),
+      });
+    } catch (e) {
+      if (/already exists|name already/i.test(e.message)) {
+        log('⚠ 同名仓库已存在，将直接向它写入配置', 'dim');
+      } else throw e;
+    }
+    const full = `${user.login}/${repo}`;
+    log('✓ 仓库就绪', 'ok');
+
+    log('写入 Secrets（浏览器内加密，直连 GitHub）…', 'dim');
+    await setSecret(full, 'ICS_URL', ics, token);          log('  ✓ ICS_URL', 'ok');
+    await setSecret(full, 'SMTP_USER', smtpUser, token);   log('  ✓ SMTP_USER', 'ok');
+    await setSecret(full, 'SMTP_PASS', smtpPass, token);   log('  ✓ SMTP_PASS', 'ok');
+    await setSecret(full, 'MAIL_TO', mailto, token);       log('  ✓ MAIL_TO', 'ok');
+    if (schoolPw) {
+      await setSecret(full, 'SCHOOL_PASSWORD', schoolPw, token); log('  ✓ SCHOOL_PASSWORD（全保真模式）', 'ok');
+      await api(`/repos/${full}/actions/variables/SUSTECH_SID`, token, {
+        method: 'PUT', body: JSON.stringify({ value: sid }),
+      }); log('  ✓ SUSTECH_SID', 'ok');
+    }
+    if (grades) {
+      await api(`/repos/${full}/actions/variables/ENABLE_GRADES`, token, {
+        method: 'PUT', body: JSON.stringify({ value: '1' }),
+      }); log('  ✓ ENABLE_GRADES=1', 'ok');
+    }
+
+    log('触发首次运行（escalate 模式）…');
+    await api(`/repos/${full}/actions/workflows/notify.yml/dispatches`, token, {
+      method: 'POST', body: JSON.stringify({ ref: 'main', inputs: { mode: 'escalate' } }),
+    });
+    log('✓ 已触发', 'ok');
+
+    $('linkRepo').href = `https://github.com/${full}`;
+    $('linkActions').href = `https://github.com/${full}/actions`;
+    $('done').style.display = 'block';
+    $('done').scrollIntoView({ behavior: 'smooth' });
+    log('全部完成。记得撤销 PAT。', 'ok');
+  } catch (e) {
+    fail(e.message);
+  } finally {
+    $('go').disabled = false;
+  }
+};
+</script>
+</body>
+</html>

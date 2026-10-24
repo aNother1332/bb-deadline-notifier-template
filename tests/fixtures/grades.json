@@ -1,0 +1,17 @@
+{
+  "courses": [
+    {
+      "courseName": "SME212 工程力学",
+      "grades": [
+        { "title": "Homework 1", "score": "88" },
+        { "title": "Homework 2", "score": "92" }
+      ]
+    },
+    {
+      "courseName": "CS101 计算概论",
+      "grades": [
+        { "title": "week3 练习", "score": "A" }
+      ]
+    }
+  ]
+}

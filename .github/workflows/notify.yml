@@ -1,0 +1,104 @@
+name: notify
+
+on:
+  schedule:
+    - cron: "10 0 * * *"  # 北京 08:10：分档升级提醒（错开 08:00 日报，避免状态回写竞态）
+    - cron: "0 6 * * *"   # 北京 14:00：分档升级提醒
+    - cron: "0 12 * * *"  # 北京 20:00：分档升级提醒
+    - cron: "0 0 * * *"   # 北京 08:00：每日汇总
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "运行模式"
+        required: false
+        default: "escalate"
+        type: choice
+        options: [escalate, digest]
+
+permissions:
+  contents: write   # 回写 state/（去重状态 + sustech 会话缓存）
+
+concurrency:
+  group: notify
+  cancel-in-progress: false   # 排队串行，避免状态回写竞态
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ICS_URL: ${{ secrets.ICS_URL }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      MAIL_TO: ${{ secrets.MAIL_TO }}
+      SCHOOL_PASSWORD: ${{ secrets.SCHOOL_PASSWORD }}
+      ENABLE_GRADES: ${{ vars.ENABLE_GRADES }}
+      FROM_ADDR: ${{ vars.FROM_ADDR }}
+      SUSTECH_SID: ${{ vars.SUSTECH_SID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 全保真层：装 Node + sustech-cli（未配置学校密码时跳过，纯 ICS 运行）
+      - uses: actions/setup-node@v4
+        if: env.SCHOOL_PASSWORD != ''
+        with:
+          node-version: "20"
+
+      - name: Install sustech-cli
+        if: env.SCHOOL_PASSWORD != ''
+        run: npm install --global sustech-cli
+
+      # 恢复 CI 自己的 sustech 配置（Linux 后端；与 Windows 保育层目录分离，互不覆盖）
+      - name: Restore sustech session
+        if: env.SCHOOL_PASSWORD != ''
+        run: |
+          if [ -d state/sustech-home-linux ]; then
+            mkdir -p "$HOME/.config"
+            rm -rf "$HOME/.config/sustech-cli"
+            cp -r state/sustech-home-linux "$HOME/.config/sustech-cli"
+            echo "restored linux sustech config"
+          else
+            echo "no cached linux config; first login will be attempted (SID + password)"
+          fi
+
+      - name: Determine mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 0 * * *" ]; then
+            echo "mode=digest" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=escalate" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run checker
+        run: python checker.py --mode "${{ steps.mode.outputs.mode }}"
+
+      # checker 失败（如纯 ICS 也抓不到）会让本 step 失败 → GitHub 会给仓库所有者
+      # 发失败通知邮件——这就是"提醒链路断了"的报警通道，请在仓库通知设置里保持开启。
+
+      - name: Persist sustech session
+        if: env.SCHOOL_PASSWORD != ''
+        run: |
+          if [ -d "$HOME/.config/sustech-cli" ]; then
+            rm -rf state/sustech-home-linux
+            mkdir -p state
+            cp -r "$HOME/.config/sustech-cli" state/sustech-home-linux
+          fi
+
+      - name: Commit state
+        run: |
+          git config user.name "bb-notifier-bot"
+          git config user.email "actions@github.com"
+          git add state/ || true
+          if git diff --cached --quiet; then
+            echo "no state changes"
+          else
+            git commit -m "chore: update notifier state [skip ci]"
+            git push
+          fi

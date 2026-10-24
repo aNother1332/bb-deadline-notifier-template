@@ -1,0 +1,22 @@
+{
+  "courses": [
+    {
+      "courseName": "SME212 工程力学",
+      "items": [
+        { "id": "1001", "title": "Homework 3", "dueAt": "2026-10-26T02:00:00+08:00", "submissionState": "not_submitted" },
+        { "id": "1002", "title": "Homework 4", "dueAt": "2026-10-25T14:00:00+08:00", "submissionState": "NO_ATTEMPT" },
+        { "id": "1003", "title": "Homework 5", "dueAt": "2026-10-25T01:00:00+08:00", "submissionState": null },
+        { "id": "1004", "title": "Lab2 Report", "dueAt": "2026-10-29T23:59:00+08:00", "submissionState": "submitted" },
+        { "id": "1005", "title": "Homework 1", "dueAt": "2026-10-01T23:59:00+08:00", "submissionState": "graded" }
+      ]
+    },
+    {
+      "courseName": "CS101 计算概论",
+      "items": [
+        { "id": "2001", "title": "week4 练习", "dueAt": "2026-10-26T23:59:00+08:00" },
+        { "id": "2002", "title": "week5 练习", "dueAt": "2026-11-20T23:59:00+08:00" },
+        { "id": "2003", "title": "补交练习", "dueAt": "2026-10-25T22:59:00+08:00", "submissionState": "attempted" }
+      ]
+    }
+  ]
+}
