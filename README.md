@@ -2,6 +2,9 @@
 
 南方科技大学 Blackboard（bb.sustech.edu.cn）**作业截止日期邮件提醒工具**。纯云端运行：部署完成后你的电脑不需要安装任何东西、没有任何后台进程，提醒由 GitHub Actions 定时发出。
 
+> **致谢**：本项目基于开源项目 [sustech-cli](https://github.com/wormforce/sustech-cli) 构建——登录模式读取成绩册的
+> 数据通道完全来自该项目。遵循其 [PolyForm Noncommercial 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/) 许可，请勿用于商业用途。
+
 ## 这是什么
 
 Blackboard 的截止日期藏在每门课的深处，首页看不到，容易忘。这个工具每天给你发一封"未来 14 天未交作业"日报，并在作业剩余时间跨进 **48 / 24 / 12 小时**窗口时逐级催交——发到你的邮箱（腾讯企业邮有手机推送，等于即时提醒）。
