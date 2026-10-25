@@ -219,14 +219,11 @@
 <!-- ============ 时间设置 ============ -->
 <h2>提醒时间<span class="muted" style="font-size:14px;font-weight:400"> · 北京时间，可全部保持默认</span></h2>
 <div class="card">
-  <div class="times-grid">
-    <div class="t"><label>📰 每日日报</label><input type="time" id="t_digest" value="08:00"></div>
-    <div class="t"><label>⏰ 分档检查 ①</label><input type="time" id="t_esc1" value="08:10"></div>
-    <div class="t"><label>⏰ 分档检查 ②</label><input type="time" id="t_esc2" value="14:00"></div>
-    <div class="t"><label>⏰ 分档检查 ③</label><input type="time" id="t_esc3" value="20:00"></div>
+  <div class="times-grid" style="grid-template-columns:220px">
+    <div class="t"><label>📰 每日日报时间</label><input type="time" id="t_digest" value="08:00"></div>
   </div>
-  <p class="muted" style="margin-top:14px">日报每天一封（全部交清则静默）；分档检查在作业剩余时间跨进 48 / 24 / 12 小时窗口时各提醒一封。
-  四个时刻需互不相同且间隔 ≥ 5 分钟。部署后想改，在本页重新填写即可（会更新你仓库里的时间表）。</p>
+  <p class="muted" style="margin-top:14px">分档催交提醒（48 / 24 / 12 小时档）<b>每小时自动检查</b>——去重设计保证同一档位只发一次，
+  GitHub 调度延迟最多让提醒晚到一小时、不会漏。日报每天一封（全部交清则静默）。部署后想改日报时间，在本页重新提交即可。</p>
 </div>
 
 <button class="primary" id="go">部署</button>
@@ -323,11 +320,10 @@ function toCron(hm) {
 }
 const b64utf8 = s => btoa(unescape(encodeURIComponent(s)));
 
-async function applySchedule(full, token, digest, escs) {
+async function applySchedule(full, token, digest) {
   const path = '/repos/' + full + '/contents/.github/workflows/notify.yml';
   let text = await rawApi(path, token);
-  const subs = [['SCHEDULE_DIGEST', digest], ['SCHEDULE_ESC_1', escs[0]],
-                ['SCHEDULE_ESC_2', escs[1]], ['SCHEDULE_ESC_3', escs[2]]];
+  const subs = [['SCHEDULE_DIGEST', digest]];   // 分档检查固定每小时，只有日报时间可自定义
   for (const [marker, hm] of subs) {
     const re = new RegExp('(cron:\\s*")[^"]+("[^\\n]*#\\s*' + marker + ')');
     if (!re.test(text)) throw new Error('时间标记缺失：' + marker);
@@ -358,7 +354,6 @@ $('go').onclick = async () => {
   const schoolPw = $('school_pw').value, sid = $('sid').value.trim();
   const grades = $('grades').checked;
   const digest = $('t_digest').value || '08:00';
-  const escs = [$('t_esc1').value || '08:10', $('t_esc2').value || '14:00', $('t_esc3').value || '20:00'];
 
   const missing = [];
   if (!token) missing.push('PAT');
@@ -371,10 +366,6 @@ $('go').onclick = async () => {
   if (loginMode && !sid) missing.push('学号（已开启登录模式）');
   if (missing.length) return fail('缺少：' + missing.join('、'));
 
-  const allTimes = [digest, ...escs];
-  const mins = allTimes.map(t => t.split(':').map(Number)).map(([h, m]) => h * 60 + m).sort((a, b) => a - b);
-  for (let i = 1; i < mins.length; i++)
-    if (mins[i] - mins[i - 1] < 5) return fail('四个提醒时刻需互不相同且间隔不少于 5 分钟');
   if (!/^https:\/\/bb\.sustech\.edu\.cn\//.test(ics)) log('⚠ ICS 链接不是 bb.sustech.edu.cn 域名，继续尝试…', 'dim');
 
   log('初始化加密库…', 'dim');
@@ -420,12 +411,12 @@ $('go').onclick = async () => {
       try { await api(`/repos/${full}/actions/variables/ENABLE_GRADES`, token, { method: 'DELETE' }); } catch (e) {}
     }
 
-    log('写入提醒时间表（日报 ' + digest + '，分档 ' + escs.join(' / ') + '）…');
+    log('写入日报时间（' + digest + '）…');
     try {
-      await applySchedule(full, token, digest, escs);
-      log('✓ 时间表已更新', 'ok');
+      await applySchedule(full, token, digest);
+      log('✓ 时间表已更新（分档检查固定每小时）', 'ok');
     } catch (e) {
-      log('⚠ 时间表写入失败：' + e.message + ' —— 已保留默认时间（08:00 / 08:10 / 14:00 / 20:00）', 'dim');
+      log('⚠ 时间表写入失败：' + e.message + ' —— 日报将使用默认时间 08:00', 'dim');
     }
 
     log('触发首次运行…');

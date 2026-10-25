@@ -2,9 +2,7 @@ name: notify
 
 on:
   schedule:
-    - cron: "23 0 * * *"  # SCHEDULE_ESC_1（北京 08:23）
-    - cron: "7 6 * * *"   # SCHEDULE_ESC_2（北京 14:07）
-    - cron: "7 12 * * *"  # SCHEDULE_ESC_3（北京 20:07）
+    - cron: "13 * * * *"  # SCHEDULE_ESC（每小时：分档升级提醒——幂等自愈，被丢的触发下一小时自动补上）
     - cron: "7 0 * * *"   # SCHEDULE_DIGEST（北京 08:07 日报）
   workflow_dispatch:
     inputs:
