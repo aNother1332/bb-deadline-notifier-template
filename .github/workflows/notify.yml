@@ -23,6 +23,9 @@ concurrency:
 
 jobs:
   notify:
+    # 模板仓库自身不运行（无 Secrets，运行必然失败并给所有者发告警邮件）；
+    # 从本模板生成的仓库全名不同，正常执行
+    if: github.repository != 'aNother1332/bb-deadline-notifier-template'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
