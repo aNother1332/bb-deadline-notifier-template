@@ -2,10 +2,10 @@ name: notify
 
 on:
   schedule:
-    - cron: "10 0 * * *"  # SCHEDULE_ESC_1（北京 08:10）
-    - cron: "0 6 * * *"   # SCHEDULE_ESC_2（北京 14:00）
-    - cron: "0 12 * * *"  # SCHEDULE_ESC_3（北京 20:00）
-    - cron: "0 0 * * *"   # SCHEDULE_DIGEST（北京 08:00 日报）
+    - cron: "23 0 * * *"  # SCHEDULE_ESC_1（北京 08:23）
+    - cron: "7 6 * * *"   # SCHEDULE_ESC_2（北京 14:07）
+    - cron: "7 12 * * *"  # SCHEDULE_ESC_3（北京 20:07）
+    - cron: "7 0 * * *"   # SCHEDULE_DIGEST（北京 08:07 日报）
   workflow_dispatch:
     inputs:
       mode:
@@ -19,8 +19,9 @@ permissions:
   contents: write   # 回写 state/（去重状态 + sustech 会话缓存）
 
 concurrency:
-  group: notify
-  cancel-in-progress: false   # 排队串行，避免状态回写竞态
+  # 按 cron 区分并发组：日报与分档各自串行，但互不挤占（GitHub 同组 pending 会被新请求替换导致触发被吞）
+  group: notify-${{ github.event.schedule || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   notify:
@@ -100,5 +101,8 @@ jobs:
             echo "no state changes"
           else
             git commit -m "chore: update notifier state [skip ci]"
-            git push
+            # 与并行运行的同类任务合并状态；推送失败仅告警不报错（邮件已发，状态丢失最多导致将来重复一封）
+            if ! (git pull --rebase --autostash && git push); then
+              echo "::warning::state push failed (concurrent run); dedup state may lag"
+            fi
           fi
