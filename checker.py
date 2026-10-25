@@ -139,10 +139,10 @@ def parse_ics(text: str) -> list[dict]:
         start, title = ev.get("start"), ev.get("title", "(untitled)")
         if start is None:
             continue
-        m = GRADABLE_UID.search(ev.get("uid", ""))
-        item_id = f"bb-{m.group(1)}" if m else f"ics-{abs(hash((title, start.isoformat())))}"
+        # id 采用标题键而非 ICS 内部 ID，与 sustech-cli 平面统一——
+        # 避免降级/全保真切换时因 ID 体系不同而重复发信（去重键另含截止时刻与档位）
         items.append({
-            "id": item_id, "title": title, "course": None,
+            "id": f"t:{title}", "title": title, "course": None,
             "due": start, "submitted": None, "source": "ics",
         })
     return items
@@ -209,9 +209,7 @@ def _iter_deadline_records(obj, inherited_course: str | None = None):
             due = _coerce_due(due_raw)
             if due is not None:
                 st = next((obj[k] for k in STATE_KEYS if k in obj), None)
-                ident = next((str(obj[k]) for k in ("id", "itemId", "uid", "columnId", "contentId")
-                              if obj.get(k) not in (None, "")), "")
-                yield {"id": ident or None, "title": title, "course": course,
+                yield {"id": f"t:{title}", "title": title, "course": course,
                        "due": due, "submitted": looks_submitted(st)}
                 return  # 本层已消费，不再深入
         for v in obj.values():
@@ -268,8 +266,7 @@ def _native_deadlines(raw_text: str, state: str = "") -> list[dict] | None:
         if not due or not d.get("title"):
             continue
         course = " ".join(str(x) for x in (d.get("courseCode"), d.get("courseName")) if x)
-        ident = d.get("columnId") or d.get("contentId") or d.get("courseId")
-        items.append({"id": f"col-{ident}", "title": str(d["title"]), "course": course or None,
+        items.append({"id": f"t:{d['title']}", "title": str(d["title"]), "course": course or None,
                       "due": due, "submitted": state == "submitted",
                       "submissionState": state, "source": "cli"})
     return items
